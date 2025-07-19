@@ -21,19 +21,19 @@ add_rules("mode.debug", "mode.releasedbg")
 add_rules("plugin.vsxmake.autoupdate")
 
 -- targets
-target("commonlibsse-ng-template")
+target("skyrim12")
     -- add dependencies to target
     add_deps("commonlibsse-ng")
 
     -- add commonlibsse-ng plugin
     add_rules("commonlibsse-ng.plugin", {
-        name = "commonlibsse-ng-template",
-        author = "qudix",
-        description = "SKSE64 plugin template using CommonLibSSE-NG"
+        name = "skyrim12",
+        author = "ProfJack/五脚猫",
+        description = "skyrim in 12"
     })
 
     -- add src files
     add_files("src/**.cpp")
     add_headerfiles("src/**.h")
     add_includedirs("src")
-    set_pcxxheader("src/pch.h")
+    set_pcxxheader("src/PCH.h")
