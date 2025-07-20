@@ -2,6 +2,7 @@
 
 #include "Globals.h"
 
+namespace {
 // ============================================================================================================================
 LRESULT CALLBACK windowProcessFn(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -19,18 +20,18 @@ HWND createSecondWindow(
     wnd_class.cbClsExtra    = NULL;
     wnd_class.cbSize        = sizeof(WNDCLASSEX);
     wnd_class.cbWndExtra    = NULL;
-    wnd_class.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    wnd_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
     wnd_class.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wnd_class.hIcon         = NULL;
     wnd_class.hIconSm       = NULL;
     wnd_class.hInstance     = main_inst;
-    wnd_class.lpfnWndProc   = (WNDPROC)windowProcessFn;
+    wnd_class.lpfnWndProc   = windowProcessFn;
     wnd_class.lpszClassName = L"d3d12 window";
     wnd_class.lpszMenuName  = NULL;
     wnd_class.style         = CS_HREDRAW | CS_VREDRAW;
 
     if (!RegisterClassEx(&wnd_class)) {
-        int result = GetLastError();
+        auto result = GetLastError();
         MessageBox(NULL,
                    std::format(L"Window class creation failed.\nError: {}", result).data(),
                    L"Window Class Failed",
@@ -51,8 +52,8 @@ HWND createSecondWindow(
                                main_inst,
                                NULL);
 
-    if (!hwnd) {
-        int result = GetLastError();
+    if (hwnd == nullptr) {
+        auto result = GetLastError();
         MessageBox(NULL,
                    std::format(L"Window creation failed.\nError: {}", result).data(),
                    L"Window Creation Failed",
@@ -91,7 +92,7 @@ void getHardwareAdapter(
             DXGI_ADAPTER_DESC1 desc;
             adapter->GetDesc1(&desc);
 
-            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+            if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0U) {
                 // Don't select the Basic Render Driver adapter.
                 // If you want a software adapter, pass in "/warp" on the command line.
                 continue;
@@ -110,7 +111,7 @@ void getHardwareAdapter(
             DXGI_ADAPTER_DESC1 desc;
             adapter->GetDesc1(&desc);
 
-            if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+            if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) != 0U) {
                 // Don't select the Basic Render Driver adapter.
                 // If you want a software adapter, pass in "/warp" on the command line.
                 continue;
@@ -126,6 +127,8 @@ void getHardwareAdapter(
 
     *ppAdapter = adapter.Detach();
 }
+} // namespace
+
 
 // ============================================================================================================================
 void Renderer::onRendererInit(
@@ -160,7 +163,7 @@ void Renderer::onRendererInit(
         reinterpret_cast<HINSTANCE>(main_window_data.instance),
         window_props);
 
-    if (window)
+    if (window != nullptr)
         initD3d();
 }
 
@@ -229,9 +232,9 @@ void Renderer::initD3d()
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(rtv_heap->GetCPUDescriptorHandleForHeapStart());
 
         // Create a RTV for each frame.
-        for (UINT n = 0; n < FRAME_COUNT; n++) {
-            DX::ThrowIfFailed(swapchain->GetBuffer(n, IID_PPV_ARGS(&swapchain_rts[n])));
-            device->CreateRenderTargetView(swapchain_rts[n].Get(), nullptr, rtv_handle);
+        for (UINT i = 0; i < FRAME_COUNT; i++) {
+            DX::ThrowIfFailed(swapchain->GetBuffer(i, IID_PPV_ARGS(&swapchain_rts[i])));
+            device->CreateRenderTargetView(swapchain_rts[i].Get(), nullptr, rtv_handle);
             rtv_handle.Offset(1, rtv_descriptor_size);
         }
     }
@@ -281,7 +284,7 @@ void Renderer::draw()
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), frame_index, rtv_descriptor_size);
 
         // Record commands.
-        const float clear_color[] = {0.f, 0.2f, 0.4f, 1.0f};
+        const float clear_color[] = {0.F, 0.2F, 0.4F, 1.0F};
         cmd_list->ClearRenderTargetView(rtv_handle, clear_color, 0, nullptr);
 
         // Indicate that the back buffer will now be used to present.
