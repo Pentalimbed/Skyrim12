@@ -10,5 +10,5 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
     return true;
 }
 
-
+// TODO: NG RE
 // BUG: Steam overlay stack overflow

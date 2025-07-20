@@ -82,12 +82,12 @@ void getHardwareAdapter(
     ComPtr<IDXGIFactory6> factory6;
     if (SUCCEEDED(pFactory->QueryInterface(IID_PPV_ARGS(&factory6)))) {
         for (
-            UINT adapterIndex = 0;
+            UINT adapter_index = 0;
             SUCCEEDED(factory6->EnumAdapterByGpuPreference(
-                adapterIndex,
+                adapter_index,
                 requestHighPerformanceAdapter == true ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_UNSPECIFIED,
                 IID_PPV_ARGS(&adapter)));
-            ++adapterIndex) {
+            ++adapter_index) {
             DXGI_ADAPTER_DESC1 desc;
             adapter->GetDesc1(&desc);
 
@@ -106,7 +106,7 @@ void getHardwareAdapter(
     }
 
     if (adapter.Get() == nullptr) {
-        for (UINT adapterIndex = 0; SUCCEEDED(pFactory->EnumAdapters1(adapterIndex, &adapter)); ++adapterIndex) {
+        for (UINT adapter_index = 0; SUCCEEDED(pFactory->EnumAdapters1(adapter_index, &adapter)); ++adapter_index) {
             DXGI_ADAPTER_DESC1 desc;
             adapter->GetDesc1(&desc);
 
@@ -168,10 +168,9 @@ void Renderer::onRendererInit(
 void Renderer::initD3d()
 {
 
-    UINT dxgiFactoryFlags = 0;
-
+    UINT                  dxgi_factory_flags = 0;
     ComPtr<IDXGIFactory4> factory;
-    DX::ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory)));
+    DX::ThrowIfFailed(CreateDXGIFactory2(dxgi_factory_flags, IID_PPV_ARGS(&factory)));
 
     ComPtr<IDXGIAdapter1> hardware_adapter;
     getHardwareAdapter(factory.Get(), &hardware_adapter);
@@ -279,14 +278,11 @@ void Renderer::draw()
         auto transition = CD3DX12_RESOURCE_BARRIER::Transition(swapchain_rts[frame_index].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
         cmd_list->ResourceBarrier(1, &transition);
 
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), frame_index, rtv_descriptor_size);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(rtv_heap->GetCPUDescriptorHandleForHeapStart(), frame_index, rtv_descriptor_size);
 
         // Record commands.
-        LARGE_INTEGER t, freq;
-        QueryPerformanceCounter(&t);
-        QueryPerformanceFrequency(&freq);
-        const float clearColor[] = {std::sin(t.QuadPart / (float)freq.QuadPart) * 0.5f + 0.5f, 0.2f, 0.4f, 1.0f};
-        cmd_list->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        const float clear_color[] = {0.f, 0.2f, 0.4f, 1.0f};
+        cmd_list->ClearRenderTargetView(rtv_handle, clear_color, 0, nullptr);
 
         // Indicate that the back buffer will now be used to present.
         transition = CD3DX12_RESOURCE_BARRIER::Transition(swapchain_rts[frame_index].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

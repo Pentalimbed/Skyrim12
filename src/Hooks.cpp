@@ -6,6 +6,9 @@
 
 #include <detours/Detours.h>
 
+// Disable linting because of stl/hook naming convention
+// NOLINTBEGIN(readability-identifier-naming)
+
 // No littering hooks everywhere!
 namespace stl {
 using namespace SKSE::stl;
@@ -100,7 +103,7 @@ struct BSGraphics_Renderer_Init {
     static void install() { stl::write_thunk_call<BSGraphics_Renderer_Init>(REL::ID(35548).address() + 0x8a0); }
 };
 
-
+// NOLINTEND(readability-identifier-naming)
 
 // ============================================================================================================================
 void installHooks()
@@ -108,5 +111,7 @@ void installHooks()
     BSGraphics_Renderer_Init::install();
     BSGraphics_Renderer_Begin_sub_140D74B40::install();
 }
+
+
 
 } // namespace Hooks
