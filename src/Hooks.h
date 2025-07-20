@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Hooks
-{
+namespace Hooks {
 
-}
+void installHooks();
+} // namespace Hooks

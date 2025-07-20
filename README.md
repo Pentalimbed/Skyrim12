@@ -7,6 +7,9 @@
 ### Build
 To build the project, run the following command:
 ```bat
-xmake build
+xmake
 ```
-Use `./build-rel.bat` only if you have clang-cl
+If using clang-cl + clangd, you can try:
+```bat
+./build-rel.bat
+```
