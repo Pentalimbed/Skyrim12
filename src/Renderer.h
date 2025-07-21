@@ -26,8 +26,7 @@ struct Renderer {
 
     void onRendererInit(
         RE::BSGraphics::RendererInitOSData*          a_data,
-        RE::BSGraphics::ApplicationWindowProperties* a_windowProps,
-        REX::W32::HWND                               a_window);
+        RE::BSGraphics::ApplicationWindowProperties* a_windowProps);
     void initD3d();
 
     void draw();

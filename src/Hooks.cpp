@@ -10,6 +10,7 @@
 // NOLINTBEGIN(readability-identifier-naming)
 
 // No littering hooks everywhere!
+namespace {
 namespace stl {
 using namespace SKSE::stl;
 
@@ -68,9 +69,10 @@ void detour_thunk_ignore_func(REL::RelocationID a_relId)
 template <std::size_t idx, class T>
 void detour_vfunc(void* target)
 {
-    *(uintptr_t*)&T::func = Detours::X64::DetourClassVTable(*(uintptr_t*)target, &T::thunk, idx);
+    *(uintptr_t*)&T::func = Detours::X64::DetourClassVTable(*static_cast<uintptr_t*>(target), &T::thunk, idx);
 }
 } // namespace stl
+} // namespace
 
 // ============================================================================================================================
 namespace Hooks {
@@ -96,7 +98,7 @@ struct BSGraphics_Renderer_Init {
         REX::W32::HWND                               a_window)
     {
         func(a_this, a_data, a_windowProps, a_window);
-        Globals::renderer.onRendererInit(a_data, a_windowProps, a_window);
+        Globals::renderer.onRendererInit(a_data, a_windowProps);
     }
     static inline REL::Relocation<decltype(thunk)> func;
 
@@ -111,7 +113,5 @@ void installHooks()
     BSGraphics_Renderer_Init::install();
     BSGraphics_Renderer_Begin_sub_140D74B40::install();
 }
-
-
 
 } // namespace Hooks

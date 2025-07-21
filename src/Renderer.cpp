@@ -4,17 +4,13 @@
 
 namespace {
 // ============================================================================================================================
-LRESULT CALLBACK windowProcessFn(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    return Globals::renderer.main_window_data.windowProcFunction(reinterpret_cast<REX::W32::HWND>(hwnd), msg, wParam, lParam);
-}
-
-// ============================================================================================================================
 HWND createSecondWindow(
-    HWND                                               main_wnd,
-    HINSTANCE                                          main_inst,
+    const RE::BSGraphics::RendererInitOSData&          os_data,
     const RE::BSGraphics::ApplicationWindowProperties& props)
 {
+    HWND      main_wnd  = reinterpret_cast<HWND>(os_data.hwnd);
+    HINSTANCE main_inst = reinterpret_cast<HINSTANCE>(os_data.instance);
+
     WNDCLASSEX wnd_class;
     ZeroMemory(&wnd_class, sizeof(WNDCLASSEX));
     wnd_class.cbClsExtra    = NULL;
@@ -25,7 +21,7 @@ HWND createSecondWindow(
     wnd_class.hIcon         = NULL;
     wnd_class.hIconSm       = NULL;
     wnd_class.hInstance     = main_inst;
-    wnd_class.lpfnWndProc   = windowProcessFn;
+    wnd_class.lpfnWndProc   = reinterpret_cast<WNDPROC>(os_data.windowProcFunction);
     wnd_class.lpszClassName = L"d3d12 window";
     wnd_class.lpszMenuName  = NULL;
     wnd_class.style         = CS_HREDRAW | CS_VREDRAW;
@@ -133,8 +129,7 @@ void getHardwareAdapter(
 // ============================================================================================================================
 void Renderer::onRendererInit(
     RE::BSGraphics::RendererInitOSData*          a_data,
-    RE::BSGraphics::ApplicationWindowProperties* a_windowProps,
-    [[maybe_unused]] REX::W32::HWND              a_window)
+    RE::BSGraphics::ApplicationWindowProperties* a_windowProps)
 {
     main_window_data = *a_data;
     window_props     = *a_windowProps;
@@ -158,10 +153,7 @@ void Renderer::onRendererInit(
                  window_props.borderlessWindow,
                  window_props.vsync);
 
-    window = createSecondWindow(
-        reinterpret_cast<HWND>(main_window_data.hwnd),
-        reinterpret_cast<HINSTANCE>(main_window_data.instance),
-        window_props);
+    window = createSecondWindow(main_window_data, window_props);
 
     if (window != nullptr)
         initD3d();
