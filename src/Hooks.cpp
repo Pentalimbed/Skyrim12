@@ -72,25 +72,28 @@ void detour_vfunc(void* target)
     *(uintptr_t*)&T::func = Detours::X64::DetourClassVTable(*(uintptr_t*)target, &T::thunk, idx);
 }
 } // namespace stl
+
 } // namespace
 
 namespace Hooks {
 // ============================================================================================================================
 // HACK: Debugging call stack of every draw/dispatch
-struct ID3D11DeviceContext_StackTracer {
+struct StackTracer {
     static inline bool doLog = false;
-    struct DebugEventSink : public RE::BSTEventSink<RE::InputEvent> {
-        RE::BSEventNotifyControl ProcessEvent(const RE::InputEvent* a_event, [[maybe_unused]] RE::BSTEventSource<RE::InputEvent>* a_eventSource) override
+    struct BSInputDeviceManager_PollInputDevices {
+        static void thunk(RE::BSTEventSource<RE::InputEvent*>* a_dispatcher, RE::InputEvent** a_events)
         {
-            if ((a_event != nullptr) && (a_eventSource != nullptr) && (a_event->eventType == RE::INPUT_EVENT_TYPE::kChar)) {
-                const auto* event = a_event->AsCharEvent();
-                if (event->keyCode == '[')
-                    doLog = !doLog;
-            }
-            return RE::BSEventNotifyControl::kContinue;
+            if (a_events != nullptr)
+                for (auto* event = *a_events; event != nullptr; event = event->next)
+                    if (event->eventType == RE::INPUT_EVENT_TYPE::kButton && event->GetDevice() == RE::INPUT_DEVICE::kKeyboard)
+                        if (const auto* buttonEvent = event->AsButtonEvent(); buttonEvent->GetIDCode() == 0x41) // F7
+                            doLog = buttonEvent->IsPressed();
+            func(a_dispatcher, a_events);
         }
+        static inline REL::Relocation<decltype(thunk)> func;
+
+        static void install() { stl::write_thunk_call<BSInputDeviceManager_PollInputDevices>(REL::RelocationID(67315, 68617).address() + REL::Relocate(0x7B, 0x7B, 0x81)); }
     };
-    static inline DebugEventSink sink = {};
 
     static void printStackTrace()
     {
@@ -98,111 +101,22 @@ struct ID3D11DeviceContext_StackTracer {
             Logger::info("{}", std::stacktrace::current());
     }
 
-    static void thunkDrawIndexed(
-        ID3D11DeviceContext* a_this,
-        UINT                 IndexCount,
-        UINT                 StartIndexLocation,
-        INT                  BaseVertexLocation)
-    {
-        printStackTrace();
-        funcDrawIndexed(a_this, IndexCount, StartIndexLocation, BaseVertexLocation);
-    }
-    static inline REL::Relocation<decltype(thunkDrawIndexed)> funcDrawIndexed;
+    // This hooks the call in RenderPassImmediately that is called whenever the state is dirty
+    struct RenderPassImmediately_sub_140D74B40 {
+        static int32_t thunk(int32_t a1, RE::BSShader* a2)
+        {
+            printStackTrace();
+            return func(a1, a2);
+        }
+        static inline REL::Relocation<decltype(thunk)> func;
 
-    static void thunkDraw(
-        ID3D11DeviceContext* a_this,
-        UINT                 VertexCount,
-        UINT                 StartVertexLocation)
-    {
-        printStackTrace();
-        funcDraw(a_this, VertexCount, StartVertexLocation);
-    }
-    static inline REL::Relocation<decltype(thunkDraw)> funcDraw;
-
-    static void thunkDrawIndexedInstanced(
-        ID3D11DeviceContext* a_this,
-        UINT                 IndexCountPerInstance,
-        UINT                 InstanceCount,
-        UINT                 StartIndexLocation,
-        INT                  BaseVertexLocation,
-        UINT                 StartInstanceLocation)
-    {
-        printStackTrace();
-        funcDrawIndexedInstanced(a_this, IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
-    }
-    static inline REL::Relocation<decltype(thunkDrawIndexedInstanced)> funcDrawIndexedInstanced;
-
-    static void thunkDrawInstanced(
-        ID3D11DeviceContext* a_this,
-        UINT                 VertexCountPerInstance,
-        UINT                 InstanceCount,
-        UINT                 StartVertexLocation,
-        UINT                 StartInstanceLocation)
-    {
-        printStackTrace();
-        funcDrawInstanced(a_this, VertexCountPerInstance, InstanceCount, StartVertexLocation, StartInstanceLocation);
-    }
-    static inline REL::Relocation<decltype(thunkDrawInstanced)> funcDrawInstanced;
-
-    static void thunkDrawIndexedInstancedIndirect(
-        ID3D11DeviceContext* a_this,
-        ID3D11Buffer*        pBufferForArgs,
-        UINT                 AlignedByteOffsetForArgs)
-    {
-        printStackTrace();
-        funcDrawIndexedInstancedIndirect(a_this, pBufferForArgs, AlignedByteOffsetForArgs);
-    }
-    static inline REL::Relocation<decltype(thunkDrawIndexedInstancedIndirect)> funcDrawIndexedInstancedIndirect;
-
-    static void thunkDrawInstancedIndirect(
-        ID3D11DeviceContext* a_this,
-        ID3D11Buffer*        pBufferForArgs,
-        UINT                 AlignedByteOffsetForArgs)
-    {
-        printStackTrace();
-        funcDrawInstancedIndirect(a_this, pBufferForArgs, AlignedByteOffsetForArgs);
-    }
-    static inline REL::Relocation<decltype(thunkDrawInstancedIndirect)> funcDrawInstancedIndirect;
-
-    static void thunkDispatch(
-        ID3D11DeviceContext* a_this,
-        UINT                 ThreadGroupCountX,
-        UINT                 ThreadGroupCountY,
-        UINT                 ThreadGroupCountZ)
-    {
-        printStackTrace();
-        funcDispatch(a_this, ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ);
-    }
-    static inline REL::Relocation<decltype(thunkDispatch)> funcDispatch;
-
-    static void thunkDispatchIndirect(
-        ID3D11DeviceContext* a_this,
-        ID3D11Buffer*        pBufferForArgs,
-        UINT                 AlignedByteOffsetForArgs)
-    {
-        printStackTrace();
-        funcDispatchIndirect(a_this, pBufferForArgs, AlignedByteOffsetForArgs);
-    }
-    static inline REL::Relocation<decltype(thunkDispatchIndirect)> funcDispatchIndirect;
+        static void install() { stl::write_thunk_call<RenderPassImmediately_sub_140D74B40>(REL::ID(100854).address() + 0x49); } // 141308440+0x49
+    };
 
     static void install()
     {
-        constexpr size_t OFFSET_VTABLE = 3 + 4; // IUnknown + IDeviceChild
-        auto*            context       = reinterpret_cast<ID3D11DeviceContext*>(RE::BSGraphics::Renderer::GetSingleton()->GetRuntimeData().context);
-
-        *(uintptr_t*)(&funcDrawIndexed)                  = Detours::X64::DetourClassVTable(*(uintptr_t*)context, &thunkDrawIndexed, OFFSET_VTABLE + 5);
-        *(uintptr_t*)(&funcDraw)                         = Detours::X64::DetourClassVTable(*(uintptr_t*)context, &thunkDraw, OFFSET_VTABLE + 6);
-        *(uintptr_t*)(&funcDrawIndexedInstanced)         = Detours::X64::DetourClassVTable(*(uintptr_t*)context, &thunkDrawIndexedInstanced, OFFSET_VTABLE + 13);
-        *(uintptr_t*)(&funcDrawInstanced)                = Detours::X64::DetourClassVTable(*(uintptr_t*)context, &thunkDrawInstanced, OFFSET_VTABLE + 14);
-        *(uintptr_t*)(&funcDrawIndexedInstancedIndirect) = Detours::X64::DetourClassVTable(*(uintptr_t*)(context), &thunkDrawIndexedInstancedIndirect, OFFSET_VTABLE + 32);
-        *(uintptr_t*)(&funcDrawInstancedIndirect)        = Detours::X64::DetourClassVTable(*(uintptr_t*)(context), &thunkDrawInstancedIndirect, OFFSET_VTABLE + 33);
-        *(uintptr_t*)(&funcDispatch)                     = Detours::X64::DetourClassVTable(*(uintptr_t*)(context), &thunkDispatch, OFFSET_VTABLE + 34);
-        *(uintptr_t*)(&funcDispatchIndirect)             = Detours::X64::DetourClassVTable(*(uintptr_t*)(context), &thunkDispatchIndirect, OFFSET_VTABLE + 35);
-    }
-
-    static void installEventListeners()
-    {
-        RE::BSInputDeviceManager::GetSingleton()->AddEventSink(&ID3D11DeviceContext_StackTracer::sink);
+        BSInputDeviceManager_PollInputDevices::install();
+        RenderPassImmediately_sub_140D74B40::install();
     }
 };
 
@@ -210,10 +124,10 @@ struct ID3D11DeviceContext_StackTracer {
 // All the rendering and present
 // TODO: Find a better place to hook
 struct BSGraphics_Renderer_Begin_sub_140D74B40 {
-    static uint64_t WINAPI thunk(uint64_t a1, uint64_t a2)
+    static uint64_t thunk(uint64_t a1, uint64_t a2)
     {
         auto retval = func(a1, a2);
-        Globals::renderer.draw();
+        // Globals::renderer.draw();
         return retval;
     }
     static inline REL::Relocation<decltype(thunk)> func;
@@ -231,8 +145,7 @@ struct BSGraphics_Renderer_Init {
         REX::W32::HWND                               a_window)
     {
         func(a_this, a_data, a_windowProps, a_window);
-        ID3D11DeviceContext_StackTracer::install();
-        Globals::renderer.onRendererInit(a_data, a_windowProps);
+        // Globals::renderer.onRendererInit(a_data, a_windowProps);
     }
     static inline REL::Relocation<decltype(thunk)> func;
 
@@ -244,13 +157,8 @@ struct BSGraphics_Renderer_Init {
 // ============================================================================================================================
 void installHooks()
 {
+    StackTracer::install();
     BSGraphics_Renderer_Init::install();
     BSGraphics_Renderer_Begin_sub_140D74B40::install();
-}
-
-// ============================================================================================================================
-void installEventListeners()
-{
-    ID3D11DeviceContext_StackTracer::installEventListeners();
 }
 } // namespace Hooks

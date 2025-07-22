@@ -4,6 +4,12 @@
 
 namespace {
 // ============================================================================================================================
+LRESULT CALLBACK windowProcessFn(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+// ============================================================================================================================
 HWND createSecondWindow(
     const RE::BSGraphics::RendererInitOSData&          os_data,
     const RE::BSGraphics::ApplicationWindowProperties& props)
@@ -21,7 +27,7 @@ HWND createSecondWindow(
     wnd_class.hIcon         = NULL;
     wnd_class.hIconSm       = NULL;
     wnd_class.hInstance     = main_inst;
-    wnd_class.lpfnWndProc   = reinterpret_cast<WNDPROC>(os_data.windowProcFunction);
+    wnd_class.lpfnWndProc   = windowProcessFn; // reinterpret_cast<WNDPROC>(os_data.windowProcFunction);
     wnd_class.lpszClassName = L"d3d12 window";
     wnd_class.lpszMenuName  = NULL;
     wnd_class.style         = CS_HREDRAW | CS_VREDRAW;

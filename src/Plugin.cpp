@@ -5,10 +5,6 @@ namespace {
 void messageHandler(SKSE::MessagingInterface::Message* message)
 {
     switch (message->type) {
-        case SKSE::MessagingInterface::kPostPostLoad: {
-            Hooks::installEventListeners();
-            break;
-        }
     }
 }
 } // namespace
@@ -25,5 +21,6 @@ SKSEPluginLoad(const SKSE::LoadInterface* a_skse)
     return true;
 }
 
-// TODO: NG RE
+// BUG: Second window breaks keyboard input
 // BUG: Steam overlay stack overflow
+// TODO: NG RE
