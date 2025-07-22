@@ -47,5 +47,5 @@ inline void ThrowIfFailed(HRESULT hr)
 }
 } // namespace DX
 
-namespace logger = SKSE::log;
+namespace Logger = SKSE::log;
 using namespace std::literals;

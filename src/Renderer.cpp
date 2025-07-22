@@ -59,7 +59,7 @@ HWND createSecondWindow(
 
     ShowWindow(hwnd, SW_SHOWNORMAL);
 
-    logger::info("Window creation succeeded.");
+    Logger::info("Window creation succeeded.");
 
     return hwnd;
 }
@@ -134,7 +134,7 @@ void Renderer::onRendererInit(
     main_window_data = *a_data;
     window_props     = *a_windowProps;
 
-    logger::info("RE::BSGraphics::ApplicationWindowProperties:\n\t"
+    Logger::info("RE::BSGraphics::ApplicationWindowProperties:\n\t"
                  "screenSize = {}, {}\n\t"
                  "windowX = {}\n\t"
                  "windowY = {}\n\t"
@@ -252,7 +252,7 @@ void Renderer::initD3d()
         }
     }
 
-    logger::info("D3D12 initialized.");
+    Logger::info("D3D12 initialized.");
 }
 
 // ============================================================================================================================

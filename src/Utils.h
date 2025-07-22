@@ -6,5 +6,5 @@ class CounterLogger {
 
 public:
     // TODO: make it debug
-    inline void log() { logger::info("CounterLogger: {}", counter++); }
+    inline void log() { Logger::info("CounterLogger: {}", counter++); }
 };
